@@ -1,2 +1,2 @@
-# personal-analytics
-Gather personal data, store it locally and analzye it 
+# infodb
+A python package to store personal information locally. 
