@@ -42,10 +42,11 @@ class db:
 
     def get_using_key(self,criteria):
         try:
-            doc_search = self.get_single_doc(criteria)    
-            if doc_search["schema"] != self.schemaName:
-                raise Exception("Not found")
-            return doc_search
+            doc_search = self.get_single_doc(criteria)
+            if doc_search :
+                if doc_search["schema"] != self.schemaName:
+                    raise Exception("Not found")
+                return doc_search
         except couchdb.ResourceNotFound:
             return None        
 
@@ -69,13 +70,20 @@ class db:
             print(f"Error inserting document: {e}")
             return None
 
-    def update(self, doc_id, data):
+    def update(self, doc_id, updates={}):
         try:
             # first check if the schema matches
-            doc = self.db[doc_id]
+            data = self.db[doc_id]
+            if data["schema"] != self.schemaName:
+                raise Exception("Not found")
             data['_id'] = doc_id
-            data['_rev'] = doc['_rev']
-            self.db.save(data)
+            # check if update fields are allowed to be updated
+            if ut.are_all_keys_allowed(updates,self.schema["update_allowed"]):
+                data["data"]  = ut.update_dict(data["data"],updates)
+                data["meta"]["updated_on"] = ut.get_current_unix_timestamp()
+                self.db.save(data)
+            else:
+                raise Exception("Updated not allowed.")
             print(f"Document with id {doc_id} updated")
         except couchdb.ResourceNotFound:
             print("Document not found")
@@ -86,9 +94,21 @@ class db:
         try:
             # first check if schema matches
             doc = self.db[doc_id]
+            if doc["schema"] != self.schemaName:
+                raise Exception("Not found")
             self.db.delete(doc)
-            print(f"Document with id {doc_id} deleted")
         except couchdb.ResourceNotFound:
             print("Document not found")
         except Exception as e:
             print(f"Error deleting document: {e}")
+    
+    def search(self,criteria):
+        try:
+            criteria["schema"] = { "$eq": self.schemaName }
+            docs_found = self.db.find({"selector":criteria})
+            results = []
+            for r in docs_found:
+                results.append(dict(r))
+            return {"records":results,"count":len(results)}
+        except Exception as e:
+            raise e    

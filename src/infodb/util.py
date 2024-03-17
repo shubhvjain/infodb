@@ -48,7 +48,7 @@ def get_current_unix_timestamp():
 
 def get_current_timestamp_human():
   c_ts = get_current_unix_timestamp()
-  return datetime.datetime.fromtimestamp(c_ts).strftime('%Y-%m-%d %H:%M:%S %Z') 
+  return datetime.datetime.fromtimestamp(c_ts).strftime('%Y-%m-%d %H:%M:%S') 
 
 def generate_blank_doc(schema_name,schema):
   c_ts = get_current_unix_timestamp()
@@ -63,3 +63,12 @@ def generate_blank_doc(schema_name,schema):
       "schema":schema_name,
    }
   return new_doc
+
+def are_all_keys_allowed(input_dict, allowed_fields):
+    # Check if all keys in the dictionary are in the list of allowed fields
+    return all(key in allowed_fields for key in input_dict.keys())
+
+def update_dict(main, update):
+    for key, value in update.items():
+        main[key] = value
+    return main
